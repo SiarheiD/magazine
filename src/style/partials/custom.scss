@@ -1,0 +1,52 @@
+.page-1 {
+	background-color: #f1f9fc;
+	background-size: contain;
+	background-position: 100% 100%;
+
+	.hgroup-1 {
+		margin-top: -1em;
+	}
+}
+
+.page-3 {
+	background-position: 0% 100%;
+	.inner-text {
+		width: 23.3em;
+		max-width: 90%;
+	}
+}
+
+.page-6 {
+	.double-col {
+		p {
+			line-height: 1.37;
+		}
+	}
+}
+
+.page-7 {
+
+	.col {
+		line-height: 1.5;
+	}
+}
+
+.page-10 {
+	.hgroup-1 {
+		h2 {
+			margin-bottom: .7em;
+		}
+	}
+}
+
+.page-11 {
+	.inner-image {
+		background-position: 50% -3rem;
+	}
+}
+
+.page-14 {
+	.col {
+		width: 10em;
+	}
+}
