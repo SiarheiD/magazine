@@ -37,12 +37,12 @@ var handleHashChange = false;
 				var windowSize = {x: $(window).width(), y: $(window).height()};
 				var firstClick;
 				firstClick = {x: evt.pageX, y: evt.pageY};
-				var dir = firstClick.x > .8 * windowSize.x ? 'next': firstClick.x < .2 * windowSize.x ? 'prev' : undefined;
+				var dir = '';
 				var moved = false;
 
-				if (dir !== undefined) {
 					evt.preventDefault();
-					var movedIn, delta;
+					var movedIn, delta = {};
+
 					$(document).on('mousemove touchmove', function(evt){
 
 						if (evt.type === 'touchmove') {
@@ -50,18 +50,25 @@ var handleHashChange = false;
 							evt.originalEvent.changedTouches[0].stopPropagation = evt.stopPropagation;
 							evt = evt.originalEvent.changedTouches[0];
 						};
-						moved = true;
+
 						movedIn = {x: evt.pageX, y: evt.pageY};
-						delta = {x: movedIn.x - firstClick.x,
-								 y: movedIn.y - firstClick.y,
-								 wx: (movedIn.x - firstClick.x)/windowSize.x,
-								 wy: (movedIn.y - firstClick.y)/windowSize.y,
-								 dir: dir};
+
+						delta.x = movedIn.x - firstClick.x;
+						delta.y = movedIn.y - firstClick.y;
+						delta.wx = (movedIn.x - firstClick.x)/windowSize.x;
+						delta.wy = (movedIn.y - firstClick.y)/windowSize.y;
 
 						if (Math.abs(delta.x) > 5) {
 							evt.preventDefault();
 							evt.stopPropagation();
-							Controller.handleMove(delta);
+
+							if (!moved){
+								delta.dir = delta.x < 0 ? 'next' : 'prev';
+								moved = true;
+							};
+							if ( (delta.x < 0 && delta.dir === 'next') || (delta.x > 0 && delta.dir === 'prev') ) {
+								Controller.handleMove(delta);
+							};
 						};
 
 					}.debounce(17));
@@ -77,18 +84,16 @@ var handleHashChange = false;
 						$(this).off('touchmove');
 						$(this).off('touchend');
 					});
-				};
 
 			};
 
-			$(document).on('mousedown touchstart', mouseDown);
-			$(window).on('mousemove');
+			$(window).on('mousedown touchstart', mouseDown);
+			$(document).on('click', '.play-button', Controller.playVideo);
 			$(window).on('resize', Controller.resize);
 			$(window).on('hashchange', Controller.hashChanged);
 		},
 
 	};
-
 
 	app.init();
 
