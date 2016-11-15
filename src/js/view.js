@@ -98,7 +98,7 @@ var View = {
 		var targetDelta;
 		var dDelta;
 		var flag = false;
-		var endAnimation = null;
+
 		var rightNow = Date.now();
 		var lastFrameTimestamp;
 
@@ -154,25 +154,25 @@ var View = {
 		};
 
 		var toPlay = targetDelta - delta.wx;
-// play animation from delta to targetDelta\
+// play animation from delta to targetDelta\\
 
 		var animationPlay = function(){
 			var dT;
-			lastFrameTimestamp = lastFrameTimestamp === undefined ? Date.now() - 17: lastFrameTimestamp;
+			lastFrameTimestamp = lastFrameTimestamp === undefined ? Date.now() : lastFrameTimestamp;
 			dT = Date.now() - lastFrameTimestamp;
 			dDelta = (dT / (fullPageAnimationDuration)) * toPlay;
 			delta.wx += dDelta;
 
 			// Для анимации от  -.3 к 0 или от .3 к 0 (delta.wx * dDelta < 0) тк по достижении нуля поменяется знак и произведение >= 0,
 			// для анимации в сторону 1/-1 Math.abs(delta.wx) < Math.abs(targetDelta)
-			if (flag ? (delta.wx * dDelta < 0) : (Math.abs(delta.wx) < Math.abs(targetDelta)) ) {
+			if (flag ? (delta.wx * toPlay < 0) : (Math.abs(delta.wx) < Math.abs(targetDelta)) ) {
 				lastFrameTimestamp = Date.now();
 				self.drawSheetPosition(pages, currentIndex, delta);
 				animationFrame(animationPlay);
 			} else {
 				delta.wx = targetDelta;
-				self.drawSheetPosition(pages, currentIndex, delta);
-				self.endAnimation(pages, currentIndex, delta, !flag);
+				self.drawSheetPosition(pages, currentIndex, delta)
+						.endAnimation(pages, currentIndex, delta, !flag);
 			};
 		};
 
@@ -202,7 +202,6 @@ var View = {
 		if (delta.dir === 'prev' && currentIndex > 0) {
 
 			var page = pages.eq(currentIndex - 1);
-
 			var scaleValue = Math.abs(delta.wx);
 
 			page.css('transform', 'scaleX('+ scaleValue +')');
@@ -270,17 +269,19 @@ var View = {
 				nextPage.css('transform', 'scaleX('+ scaleValue +')');
 			}
 
-		}
+		};
+
+		return self;
 
 	},
 
 	drawSheetPosition: null,
 
+
 	drawGradient: function(pageElement, opacity){
 
 		var self = this;
 		var gradientElement = pageElement.find('.gradient-element');
-
 		pageElement.addClass('visible-gradient');
 		gradientElement.css('opacity', opacity);
 

@@ -1,8 +1,11 @@
+// common functions
+
 var magazineSelector = '#magazine';
 var pageSelector = '.magazine-page';
 var gradientElementSelector = '.gradient-element';
 var fullPageAnimationDuration = 100;
 var handleHashChange = false;
+
 
 
 
@@ -31,17 +34,17 @@ var handleHashChange = false;
 
 				if (evt.type === 'touchstart') {
 					evt.originalEvent.changedTouches[0].preventDefault = evt.preventDefault;
+					evt.originalEvent.changedTouches[0].stopPropagation = evt.stopPropagation;
 					evt = evt.originalEvent.changedTouches[0];
 				};
 
 				var windowSize = {x: $(window).width(), y: $(window).height()};
-				var firstClick;
-				firstClick = {x: evt.pageX, y: evt.pageY};
-				var dir = '';
+				var firstClick = {x: evt.pageX, y: evt.pageY};
 				var moved = false;
 
 					evt.preventDefault();
-					var movedIn, delta = {};
+					evt.stopPropagation();
+					var movedIn = {}, delta = {};
 
 					$(document).on('mousemove touchmove', function(evt){
 
@@ -51,7 +54,8 @@ var handleHashChange = false;
 							evt = evt.originalEvent.changedTouches[0];
 						};
 
-						movedIn = {x: evt.pageX, y: evt.pageY};
+						movedIn.x = evt.pageX;
+						movedIn.y = evt.pageY;
 
 						delta.x = movedIn.x - firstClick.x;
 						delta.y = movedIn.y - firstClick.y;
@@ -71,10 +75,10 @@ var handleHashChange = false;
 							};
 						};
 
-					}.debounce(17));
+					}.debounce(1000/60));
 
 					$(document).on('mouseup touchend', function(){
-// любо все вернуть на место, либо промотать страничку
+						// любо все вернуть на место, либо промотать страничку
 						if (moved) {
 							Controller.mouseUp(delta);
 						};
