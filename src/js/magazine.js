@@ -73,7 +73,8 @@ var Magazine = {
 
 	addGradients: function(){
 		var self = this;
-
+// !! лучше взять контейнер, выпилить его из дома, изменить и запилить обратно,
+// !! тк DOM обновляется каждый раз, как добавляется очередной элемент
 		self.pages.each( function(){
 			var gradientElement = $('<div></div>').addClass('gradient-element');
 			$(this).prepend(gradientElement);
@@ -95,9 +96,8 @@ var Magazine = {
 		self.addGradients()
 			.checkHash();
 
-
 		View.checkViewMode();
-
+// ! при загрузке дважды выполняется View.goTo() из .checkHash()  из View.checkViewMode()
 	},
 
 };

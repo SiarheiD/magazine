@@ -18,8 +18,11 @@ var Controller = {
 
 	handleMove: function(delta){
 
-		View.drawSheetPosition(Magazine.pages, Magazine.currentPage, delta);
+		animationFrame(function(){
+			View.drawSheetPosition(Magazine.pages, Magazine.currentPage, delta);
+		});
 
 	},
+
 
 };

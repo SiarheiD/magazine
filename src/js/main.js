@@ -1,7 +1,7 @@
 var magazineSelector = '#magazine';
 var pageSelector = '.magazine-page';
 var gradientElementSelector = '.gradient-element';
-var fullPageAnimationDuration = 500;
+var fullPageAnimationDuration = 100;
 var handleHashChange = false;
 
 
@@ -37,7 +37,7 @@ var handleHashChange = false;
 				var windowSize = {x: $(window).width(), y: $(window).height()};
 				var firstClick;
 				firstClick = {x: evt.pageX, y: evt.pageY};
-				var dir = firstClick.x > .9 * windowSize.x ? 'next': firstClick.x < .1 * windowSize.x ? 'prev' : undefined;
+				var dir = firstClick.x > .8 * windowSize.x ? 'next': firstClick.x < .2 * windowSize.x ? 'prev' : undefined;
 				var moved = false;
 
 				if (dir !== undefined) {
@@ -47,9 +47,9 @@ var handleHashChange = false;
 
 						if (evt.type === 'touchmove') {
 							evt.originalEvent.changedTouches[0].preventDefault = evt.preventDefault;
+							evt.originalEvent.changedTouches[0].stopPropagation = evt.stopPropagation;
 							evt = evt.originalEvent.changedTouches[0];
 						};
-
 						moved = true;
 						movedIn = {x: evt.pageX, y: evt.pageY};
 						delta = {x: movedIn.x - firstClick.x,
@@ -60,10 +60,11 @@ var handleHashChange = false;
 
 						if (Math.abs(delta.x) > 5) {
 							evt.preventDefault();
+							evt.stopPropagation();
 							Controller.handleMove(delta);
 						};
 
-					});
+					}.debounce(17));
 
 					$(document).on('mouseup touchend', function(){
 // любо все вернуть на место, либо промотать страничку
@@ -81,9 +82,9 @@ var handleHashChange = false;
 			};
 
 			$(document).on('mousedown touchstart', mouseDown);
-
+			$(window).on('mousemove');
 			$(window).on('resize', Controller.resize);
-			$(window).on('hashchange', Controller.hashChanged)
+			$(window).on('hashchange', Controller.hashChanged);
 		},
 
 	};

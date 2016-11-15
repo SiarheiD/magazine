@@ -1,13 +1,4 @@
-var animationFrame = (function(){
-	return requestAnimationFrame ||
-		   webkitRequestAnimationFrame ||
-		   mozRequestAnimationFrame ||
-		   oRequestAnimationFrame ||
-		   msRequestAnimationFrame ||
-		   function(callback){
-		   		setTimeout(callback, 1000/60);
-		   };
-}());
+
 
 
 var View = {
@@ -47,13 +38,12 @@ var View = {
 					var currentPage = pages.eq(currentIndex);
 					var nextPage = pages.eq(currentIndex + 1);
 
-
 					if (Magazine.currentPage % 2 === 0) {
 
 						currentPage = pages.eq(currentIndex);
 						nextPage = pages.eq(currentIndex + 1);
-
 						Magazine.currentPage += 1;
+
 					} else {
 
 						currentPage = pages.eq(currentIndex + 1);
@@ -101,7 +91,7 @@ var View = {
 
 		return self;
 	},
-
+// =========
 	animatePage: function(pages, currentIndex, delta){
 
 		var self = this;
@@ -109,6 +99,8 @@ var View = {
 		var dDelta;
 		var flag = false;
 		var endAnimation = null;
+		var rightNow = Date.now();
+		var lastFrameTimestamp;
 
 		if (self.viewMode === 'single'){
 			if (delta.dir === 'next'){
@@ -133,8 +125,7 @@ var View = {
 				};
 
 			};
-		};
-
+		} else 
 		if (self.viewMode === 'double'){
 
 			if (delta.dir === 'next'){
@@ -149,6 +140,7 @@ var View = {
 
 			} else 
 			if (delta.dir === 'prev') {
+
 				if (currentIndex === 0) return false;
 				if (delta.wx < .3) {
 					//play forward
@@ -161,131 +153,128 @@ var View = {
 			};
 		};
 
-		dDelta = (targetDelta - delta.wx)/(Math.abs(targetDelta - delta.wx) * fullPageAnimationDuration)*1000/60;
+		var toPlay = targetDelta - delta.wx;
+// play animation from delta to targetDelta\
 
-// play animation from delta to targetDelta
 		var animationPlay = function(){
+			var dT;
+			lastFrameTimestamp = lastFrameTimestamp === undefined ? Date.now() - 17: lastFrameTimestamp;
+			dT = Date.now() - lastFrameTimestamp;
+			dDelta = (dT / (fullPageAnimationDuration)) * toPlay;
 			delta.wx += dDelta;
-// Для анимации от  -.3 к 0 или от .3 к 0 (delta.wx * dDelta < 0)  для анимации в сторону 1/-1 Math.abs(delta.wx) < Math.abs(targetDelta)
+
+			// Для анимации от  -.3 к 0 или от .3 к 0 (delta.wx * dDelta < 0) тк по достижении нуля поменяется знак и произведение >= 0,
+			// для анимации в сторону 1/-1 Math.abs(delta.wx) < Math.abs(targetDelta)
 			if (flag ? (delta.wx * dDelta < 0) : (Math.abs(delta.wx) < Math.abs(targetDelta)) ) {
+				lastFrameTimestamp = Date.now();
 				self.drawSheetPosition(pages, currentIndex, delta);
 				animationFrame(animationPlay);
 			} else {
 				delta.wx = targetDelta;
 				self.drawSheetPosition(pages, currentIndex, delta);
-
 				self.endAnimation(pages, currentIndex, delta, !flag);
-
 			};
 		};
+
 		animationPlay();
 	},
 
-	drawSheetPosition: function(pages, currentIndex, delta){
+// ==============
 
+	singleModeDraw : function(pages, currentIndex, delta){
 		var self = this;
 		var windowSize = {x: $(window).width(), y: $(window).height()};
-// two modes and two directions 
-// single mode>>>>>
-		if (self.viewMode === 'single') {
 
-			if (delta.dir === 'next') {
+		if (delta.dir === 'next') {
 
-				var page = pages.eq(currentIndex);
+			var page = pages.eq(currentIndex);
 
-				var scaleValue = 1 - Math.abs(delta.wx);
-				// var translateValue = -50*(1-scaleValue);
-				if (currentIndex === pages.length - 1 && scaleValue < .7) {
-					scaleValue = .7;
-				};
-
-				page.css('transform', 'scaleX('+ scaleValue +')');
-				self.drawGradient(page, 1 - scaleValue);
-
-			} else
-
-			if (delta.dir === 'prev' && currentIndex > 0) {
-
-				var page = pages.eq(currentIndex - 1);
-
-				var scaleValue = Math.abs(delta.wx);
-
-				page.css('transform', 'scaleX('+ scaleValue +')');
-				self.drawGradient(page, 1 - scaleValue);
-
+			var scaleValue = 1 - Math.abs(delta.wx);
+			// var translateValue = -50*(1-scaleValue);
+			if (currentIndex === pages.length - 1 && scaleValue < .7) {
+				scaleValue = .7;
 			};
 
+			page.css('transform', 'scaleX('+ scaleValue +')');
+			self.drawGradient(page, 1 - scaleValue);
+
 		} else
-// <<<<<<<
-// for double mode >>>>
-		if (self.viewMode === 'double') {
+		if (delta.dir === 'prev' && currentIndex > 0) {
 
-			if (delta.dir === 'next') {
+			var page = pages.eq(currentIndex - 1);
 
-				var currentPage;
-				var nextPage
-				var scaleValue;
+			var scaleValue = Math.abs(delta.wx);
 
-				if (currentIndex % 2 === 0) {
-					currentPage = pages.eq(currentIndex);
-					nextPage = pages.eq(currentIndex + 1);
-				} else {
-					currentPage = pages.eq(currentIndex + 1);
-					nextPage = pages.eq(currentIndex + 2);
-				};
-
-				if (delta.wx > -.5) {
-					scaleValue = 1 - Math.abs(delta.wx * 2);
-					nextPage.css('transform', 'scaleX('+ 0 +')');
-					currentPage.css('transform', 'scaleX('+ scaleValue +')');
-					self.drawGradient(currentPage, 1 - scaleValue);
-
-				} else 
-				if (delta.wx < -.5) {
-					scaleValue = Math.abs(delta.wx * 2) - 1;
-					currentPage.css('transform', 'scaleX('+ 0 +')');
-					nextPage.css('transform', 'scaleX('+ scaleValue +')');
-					self.drawGradient(nextPage, 1 - scaleValue);
-				}
-
-
-			} else
-
-			if (delta.dir === 'prev' && currentIndex > 0) {
-
-				var currentPage;
-				var nextPage;
-
-				if (currentIndex % 2 === 0) {
-					currentPage = pages.eq(currentIndex - 1);
-					nextPage = pages.eq(currentIndex - 2);
-				} else {
-					currentPage = pages.eq(currentIndex);
-					nextPage = pages.eq(currentIndex - 1);
-				};
-
-				var scaleValue;
-
-				if (delta.wx < .5) {
-					scaleValue = 1 - Math.abs(delta.wx * 2);
-					nextPage.css('transform', 'scaleX('+ 0 +')');
-					currentPage.css('transform', 'scaleX('+ scaleValue +')');
-				} else 
-				if (delta.wx > .5) {
-					scaleValue = Math.abs(delta.wx * 2) - 1;
-					currentPage.css('transform', 'scaleX('+ 0 +')');
-					nextPage.css('transform', 'scaleX('+ scaleValue +')');
-				}
-
-			}
+			page.css('transform', 'scaleX('+ scaleValue +')');
+			self.drawGradient(page, 1 - scaleValue);
 
 		};
-// <<<<<<<<<<<<<
-
-
 
 		return self;
 	},
+
+	doubleModeDraw : function(pages, currentIndex, delta){
+		var self = this;
+		var windowSize = {x: $(window).width(), y: $(window).height()};
+
+		if (delta.dir === 'next') {
+
+			var currentPage;
+			var nextPage
+			var scaleValue;
+
+			if (currentIndex % 2 === 0) {
+				currentPage = pages.eq(currentIndex);
+				nextPage = pages.eq(currentIndex + 1);
+			} else {
+				currentPage = pages.eq(currentIndex + 1);
+				nextPage = pages.eq(currentIndex + 2);
+			};
+
+			if (delta.wx > -.5) {
+				scaleValue = 1 - Math.abs(delta.wx * 2);
+				nextPage.css('transform', 'scaleX('+ 0 +')');
+				currentPage.css('transform', 'scaleX('+ scaleValue +')');
+				self.drawGradient(currentPage, 1 - scaleValue);
+
+			} else {
+				scaleValue = Math.abs(delta.wx * 2) - 1;
+				currentPage.css('transform', 'scaleX('+ 0 +')');
+				nextPage.css('transform', 'scaleX('+ scaleValue +')');
+				self.drawGradient(nextPage, 1 - scaleValue);
+			}
+
+		} else
+		if (delta.dir === 'prev' && currentIndex > 0) {
+
+			var currentPage;
+			var nextPage;
+
+			if (currentIndex % 2 === 0) {
+				currentPage = pages.eq(currentIndex - 1);
+				nextPage = pages.eq(currentIndex - 2);
+			} else {
+				currentPage = pages.eq(currentIndex);
+				nextPage = pages.eq(currentIndex - 1);
+			};
+
+			var scaleValue;
+
+			if (delta.wx < .5) {
+				scaleValue = 1 - Math.abs(delta.wx * 2);
+				nextPage.css('transform', 'scaleX('+ 0 +')');
+				currentPage.css('transform', 'scaleX('+ scaleValue +')');
+			} else {
+				scaleValue = Math.abs(delta.wx * 2) - 1;
+				currentPage.css('transform', 'scaleX('+ 0 +')');
+				nextPage.css('transform', 'scaleX('+ scaleValue +')');
+			}
+
+		}
+
+	},
+
+	drawSheetPosition: null,
 
 	drawGradient: function(pageElement, opacity){
 
@@ -303,6 +292,9 @@ var View = {
 
 	},
 
+/*
+	метод перехода к определенной странице
+*/
 	goTo: function(page){
 //page - page index from
 		var self = this;
@@ -343,11 +335,13 @@ var View = {
 		if ( $(window).width()/$(window).height() >= 750/667) {
 			if (self.viewMode !== 'double') {
 				self.viewMode = 'double';
+				self.drawSheetPosition = self.doubleModeDraw;
 				self.goTo(Magazine.currentPage);
 			};
 		} else {
 			if (self.viewMode !== 'single') {
 				self.viewMode = 'single';
+				self.drawSheetPosition = self.singleModeDraw;
 				self.goTo(Magazine.currentPage);
 			};
 		};
