@@ -1,5 +1,3 @@
-// common functions
-
 var magazineSelector = '#magazine';
 var pageSelector = '.magazine-page';
 var gradientElementSelector = '.gradient-element';
@@ -95,6 +93,24 @@ var handleHashChange = false;
 			$(document).on('click', '.play-button', Controller.playVideo);
 			$(window).on('resize', Controller.resize);
 			$(window).on('hashchange', Controller.hashChanged);
+
+			$('video').on('click', function(){
+				var playButton = $(this).siblings('.play-button');
+				if (this.paused) {
+					this.play();
+					// playButton.addClass('hidden');
+				} else {
+					this.pause();
+					// playButton.removeClass('hidden');
+				}
+
+			});
+
+			$(document).on('pageflip', function(){
+				$('video.active').each(function(){
+					this.pause();
+				});
+			});
 		},
 
 	};

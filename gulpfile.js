@@ -23,6 +23,7 @@ var path = {
         js: 'build/js/',
         css: 'build/css/',
         img: 'build/img/',
+        video: 'build/video/',
         php: 'build/php/',
         purecss: 'build/css/',
         fonts: 'build/fonts/',
@@ -32,6 +33,7 @@ var path = {
         js: 'src/js/*.js',
         style: 'src/style/main.scss',
         img: 'src/img/*.*',
+        video: 'src/video/*.*',
         php: 'src/php/*.php',
         purecss: 'src/style/*.css',
         fonts: 'src/fonts/**/*.*',
@@ -42,6 +44,7 @@ var path = {
         js: 'src/js/**/*.js',
         style: 'src/style/**/*.scss',
         img: 'src/img/*.*',
+        video: 'src/video/*.*',
         php: 'src/php/*.*',
         purecss: 'src/style/*.css',
         fonts: 'src/fonts/**/*.*'
@@ -120,6 +123,11 @@ gulp.task('php:build', function() {
         .pipe(gulp.dest(path.build.php))
 });
 
+gulp.task('video:build', function() {
+    gulp.src(path.src.video)
+        .pipe(gulp.dest(path.build.video))
+});
+
 gulp.task('purecss:build', function() {
     gulp.src(path.src.purecss)
         .pipe(gulp.dest(path.build.purecss))
@@ -149,6 +157,7 @@ gulp.task('build', [
     'style:build',
     'fonts:build',
     'image:build',
+    'video:build',
     'php:build',
     'purecss:build'
 ]);

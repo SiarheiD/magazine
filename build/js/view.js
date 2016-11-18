@@ -1,6 +1,4 @@
-
-
-
+;
 var View = {
 
 	viewMode: '',
@@ -33,8 +31,6 @@ var View = {
 			if (self.viewMode === 'double'){
 				if (delta.dir === 'next'){
 
-					// var currentPage = pages.eq(currentIndex - 1);
-					// currentPage.removeClass('turned');
 					var currentPage = pages.eq(currentIndex);
 					var nextPage = pages.eq(currentIndex + 1);
 
@@ -49,6 +45,7 @@ var View = {
 						currentPage = pages.eq(currentIndex + 1);
 						nextPage = pages.eq(currentIndex + 2);
 						Magazine.currentPage +=2;
+
 					}
 
 					currentPage.addClass('turned');
@@ -67,16 +64,19 @@ var View = {
 					var nextPage;
 
 					if (currentIndex % 2 === 0) {
+
 						currentPage = pages.eq(currentIndex - 1);
 						nextPage = pages.eq(currentIndex - 2);
 						Magazine.currentPage -= 2;
 
 					} else {
+
 						currentPage = pages.eq(currentIndex);
 						nextPage = pages.eq(currentIndex - 1);
 						Magazine.currentPage -= 1;
 
 					};
+
 					currentPage.removeClass('turned');
 					nextPage.removeClass('turned');
 					currentPage.css('transform', '');
@@ -85,6 +85,8 @@ var View = {
 			};
 
 			window.location.hash = Magazine.currentPage + 1;
+			$(document).trigger('pageflip');
+
 		};
 
 		self.clearGradient(pages);
@@ -241,7 +243,20 @@ var View = {
 				currentPage.css('transform', 'scaleX('+ 0 +')');
 				nextPage.css('transform', 'scaleX('+ scaleValue +')');
 				self.drawGradient(nextPage, 1 - scaleValue);
-			}
+			};
+
+			if (currentIndex === 0) {
+				var containerTranslateValue = -25 + 25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+			} else
+			if ( Magazine.pagesCount % 2 === 0 
+				 && currentIndex === Magazine.pagesCount - 2
+				 || currentIndex === Magazine.pagesCount - 3) {
+
+				var containerTranslateValue =  25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+
+			};
 
 		} else
 		if (delta.dir === 'prev' && currentIndex > 0) {
@@ -268,6 +283,15 @@ var View = {
 				currentPage.css('transform', 'scaleX('+ 0 +')');
 				nextPage.css('transform', 'scaleX('+ scaleValue +')');
 			}
+
+			if (currentIndex === 1 || currentIndex === 2) {
+				var containerTranslateValue = -25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+			} else
+			if (currentIndex === Magazine.pagesCount - 1) {
+				var containerTranslateValue = 25 - 25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+			};
 
 		};
 
@@ -325,8 +349,16 @@ var View = {
 			pages.eq(page).addClass('turned');
 			pages.eq(page).nextAll().removeClass('turned');
 		};
-
-
+		if (self.viewMode === 'double') {
+			if (page === 0) {
+					Magazine.container.css('transform', 'translateX(-25%)')
+			} else
+			if (page === Magazine.pagesCount - 1) {
+				Magazine.container.css('transform', 'translateX(25%)')
+			};
+		} else {
+			Magazine.container.css('transform', '')
+		}
 	},
 
 
@@ -346,6 +378,24 @@ var View = {
 				self.goTo(Magazine.currentPage);
 			};
 		};
+
+		return self;
+	},
+
+	zIndexRules: function(pageSelector){
+		var self = this;
+		var pagesCount = Magazine.pagesCount;
+		var styleElement = $('<style type="text/css">');
+		var styleRule = '';
+
+		for (var i = 1; i <= pagesCount; i++) {
+
+			styleRule += pageSelector + ':nth-child('+ i +')' + '{z-index: ' + (pagesCount + 10 - i) + ';}\r\n';
+
+		};
+
+		styleElement.text(styleRule);
+		$('head').append(styleElement);
 
 		return self;
 	},

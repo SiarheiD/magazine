@@ -26,11 +26,10 @@ var Controller = {
 
 	playVideo: function(){
 
-		var videoIframe = $(this).siblings('.video-container').find('iframe');
-		var prefix = videoIframe[0].src.indexOf('?') === -1 ? '?' : '&';
-		videoIframe[0].src += prefix + 'autoplay=1';
+		var video = $(this).siblings('video');
+		video.addClass('active');
+		video.get(0).play();
 
-		videoIframe.parent().addClass('active');
 		$(this).addClass('hidden');
 	}
 

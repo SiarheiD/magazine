@@ -8,7 +8,7 @@ var Magazine = {
 	pagesCount: 0,
 
 	magazineSelector : '',
-
+	container: '',
 	mode: '',
 
 
@@ -90,13 +90,15 @@ var Magazine = {
 // находим контейнер с журналом, страницы журнала
 		self.magazineSelector = magazineSelector;
 		self.magazine = $(magazineSelector);
+		self.container = self.magazine.find('.container');
 		self.pages = self.magazine.find(pageSelector);
 		self.pagesCount = self.pages.length;
 // добавляем элементы градиентов, синхронизируем с location.hash
 		self.addGradients()
 			.checkHash();
 
-		View.checkViewMode();
+		View.zIndexRules(pageSelector)
+			.checkViewMode();
 // ! при загрузке дважды выполняется View.goTo() из .checkHash()  из View.checkViewMode()
 	},
 
