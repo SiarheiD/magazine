@@ -4,9 +4,6 @@ var gradientElementSelector = '.gradient-element';
 var fullPageAnimationDuration = 100;
 var handleHashChange = false;
 
-
-
-
 //  init function 
 
 (function(){

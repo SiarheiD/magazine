@@ -1,0 +1,732 @@
+<script>
+/* common.js */
+Function.prototype.debounce = function (milliseconds) {
+	var baseFunction = this,
+		lastEventTimestamp = null,
+		limit = milliseconds;
+	return function () {
+		var self = this,
+			args = arguments,
+			now = Date.now();
+
+		if (!lastEventTimestamp || now - lastEventTimestamp >= limit) {
+			lastEventTimestamp = now;
+			baseFunction.apply(self, args);
+		} else {};
+	};
+};
+
+var animationFrame = (function(){
+	return requestAnimationFrame ||
+				 webkitRequestAnimationFrame ||
+				 mozRequestAnimationFrame ||
+				 oRequestAnimationFrame ||
+				 msRequestAnimationFrame ||
+				 function(callback){
+				 		setTimeout(callback, 1000/60);
+				 };
+}());
+
+
+// ===============================================================================================
+/* magazine.js */
+var Magazine = {
+
+	magazine: null,
+
+	pages: [],
+	currentPage: 0,
+	pagesCount: 0,
+
+	magazineSelector : '',
+	container: '',
+	mode: '',
+
+
+	getPage: function(arg){
+
+		var self = this;
+
+		if (arg === 'current'){
+
+			return self.pages.eq(self.currentPage);
+
+		} else if (arg === 'prev') {
+			if (self.currentPage > 0 ) {
+
+				return self.pages.eq(self.currentPage - 1);
+
+			};
+		} else if (arg === 'next') {
+			if (self.currentPage < self.pagesCount ) {
+
+				return self.pages.eq(self.currentPage + 1);
+
+			};
+		} else if (typeof arg === 'number') {
+
+			return self.pages.eq(arg);
+
+		};
+	},
+
+/*
+	Метод для проверки значения в хеше
+*/
+	checkHash: function(){
+		var self = this;
+
+		// страница в хеше (нумерация от 1):
+		var pageNumber = Number(window.location.hash.slice(1));
+
+		// если в хеше нет числа или < 1 - на первую страницу страницу
+		// если там 100500 - на последнюю страницу
+		if (isNaN(pageNumber)) {
+			pageNumber = 1;
+		} else 
+		if (pageNumber < 1) {
+			pageNumber = 1;
+		} else 
+		if (pageNumber > self.pagesCount){
+			pageNumber = self.pagesCount;
+		};
+
+		window.location.hash = '#' + pageNumber;
+
+// pageNumber - 1 тк  self.currentPage от 0,  pageNumber - от 1;
+// если не соответствуют - переход на текущую страницу.
+		if (self.currentPage !== pageNumber - 1) {
+			self.currentPage = pageNumber - 1;
+			View.goTo();
+		};
+
+	},
+
+	addGradients: function(){
+		var self = this;
+// !! лучше взять контейнер, выпилить его из дома, изменить и запилить обратно,
+// !! тк DOM обновляется каждый раз, как добавляется очередной элемент
+		self.pages.each( function(){
+			var gradientElement = $('<div></div>').addClass('gradient-element');
+			$(this).prepend(gradientElement);
+		});
+
+		return self;
+	},
+
+
+	init: function(magazineSelector, pageSelector){
+
+		var self = this;
+// находим контейнер с журналом, страницы журнала
+		self.magazineSelector = magazineSelector;
+		self.magazine = $(magazineSelector);
+		self.container = self.magazine.find('.container');
+		self.pages = self.magazine.find(pageSelector);
+		self.pagesCount = self.pages.length;
+// добавляем элементы градиентов, синхронизируем с location.hash
+		self.addGradients()
+			.checkHash();
+
+		View.zIndexRules(pageSelector)
+			.checkViewMode();
+// ! при загрузке дважды выполняется View.goTo() из .checkHash()  из View.checkViewMode()
+	},
+
+};
+
+
+// ===============================================================================================
+/* view.js  */
+;
+var View = {
+
+	viewMode: '',
+
+	endAnimation: function(pages, currentIndex, delta, flag){
+
+		var self = this;
+
+		if (flag) {
+
+			if (self.viewMode === 'single'){
+				if (delta.dir === 'next'){
+
+					var currentPage = pages.eq(currentIndex);
+					currentPage.addClass('turned');
+					currentPage.css('transform', '');
+					Magazine.currentPage += 1;
+
+				} else 
+				if (delta.dir === 'prev' && currentIndex > 0) {
+
+					var currentPage = pages.eq(currentIndex - 1);
+					currentPage.removeClass('turned');
+					currentPage.css('transform', '');
+					Magazine.currentPage -= 1;
+
+				};
+			} else
+
+			if (self.viewMode === 'double'){
+				if (delta.dir === 'next'){
+
+					var currentPage = pages.eq(currentIndex);
+					var nextPage = pages.eq(currentIndex + 1);
+
+					if (Magazine.currentPage % 2 === 0) {
+
+						currentPage = pages.eq(currentIndex);
+						nextPage = pages.eq(currentIndex + 1);
+						Magazine.currentPage += 1;
+
+					} else {
+
+						currentPage = pages.eq(currentIndex + 1);
+						nextPage = pages.eq(currentIndex + 2);
+						Magazine.currentPage +=2;
+
+					}
+
+					currentPage.addClass('turned');
+					nextPage.addClass('turned');
+					currentPage.css('transform', '');
+					nextPage.css('transform', '');
+
+
+					if (Magazine.currentPage > pages.length - 1 ) {
+						Magazine.currentPage = pages.length - 1;
+					};
+
+				} else 
+				if (delta.dir === 'prev') {
+					var currentPage;
+					var nextPage;
+
+					if (currentIndex % 2 === 0) {
+
+						currentPage = pages.eq(currentIndex - 1);
+						nextPage = pages.eq(currentIndex - 2);
+						Magazine.currentPage -= 2;
+
+					} else {
+
+						currentPage = pages.eq(currentIndex);
+						nextPage = pages.eq(currentIndex - 1);
+						Magazine.currentPage -= 1;
+
+					};
+
+					currentPage.removeClass('turned');
+					nextPage.removeClass('turned');
+					currentPage.css('transform', '');
+					nextPage.css('transform', '');
+				};
+			};
+
+			window.location.hash = Magazine.currentPage + 1;
+			$(document).trigger('pageflip');
+
+		};
+
+		self.clearGradient(pages);
+
+		return self;
+	},
+// =========
+	animatePage: function(pages, currentIndex, delta){
+
+		var self = this;
+		var targetDelta;
+		var dDelta;
+		var flag = false;
+
+		var rightNow = Date.now();
+		var lastFrameTimestamp;
+
+		if (self.viewMode === 'single'){
+			if (delta.dir === 'next'){
+
+				if (delta.wx > -.3 || currentIndex === pages.length - 1 ) {
+					//play forward
+					flag = true;
+					targetDelta = 0;
+				} else {
+					targetDelta = -1;
+				};
+
+			} else 
+			if (delta.dir === 'prev') {
+				if (currentIndex === 0) return false;
+				if (delta.wx < .3) {
+					//play forward
+					flag = true;
+					targetDelta = 0;
+				} else {
+					targetDelta = 1;
+				};
+
+			};
+		} else 
+		if (self.viewMode === 'double'){
+
+			if (delta.dir === 'next'){
+
+				if (delta.wx > -.3 || currentIndex === pages.length - 1 ) {
+					//play forward
+					flag = true;
+					targetDelta = 0;
+				} else {
+					targetDelta = -1;
+				};
+
+			} else 
+			if (delta.dir === 'prev') {
+
+				if (currentIndex === 0) return false;
+				if (delta.wx < .3) {
+					//play forward
+					flag = true;
+					targetDelta = 0;
+				} else {
+					targetDelta = 1;
+				};
+
+			};
+		};
+
+		var toPlay = targetDelta - delta.wx;
+// play animation from delta to targetDelta\\
+
+		var animationPlay = function(){
+			var dT;
+			lastFrameTimestamp = lastFrameTimestamp === undefined ? Date.now() : lastFrameTimestamp;
+			dT = Date.now() - lastFrameTimestamp;
+			dDelta = (dT / (fullPageAnimationDuration)) * toPlay;
+			delta.wx += dDelta;
+
+			// Для анимации от  -.3 к 0 или от .3 к 0 (delta.wx * dDelta < 0) тк по достижении нуля поменяется знак и произведение >= 0,
+			// для анимации в сторону 1/-1 Math.abs(delta.wx) < Math.abs(targetDelta)
+			if (flag ? (delta.wx * toPlay < 0) : (Math.abs(delta.wx) < Math.abs(targetDelta)) ) {
+				lastFrameTimestamp = Date.now();
+				self.drawSheetPosition(pages, currentIndex, delta);
+				animationFrame(animationPlay);
+			} else {
+				delta.wx = targetDelta;
+				self.drawSheetPosition(pages, currentIndex, delta)
+					.endAnimation(pages, currentIndex, delta, !flag);
+			};
+		};
+
+		animationPlay();
+	},
+
+// ==============
+
+	singleModeDraw : function(pages, currentIndex, delta){
+		var self = this;
+		var windowSize = {x: $(window).width(), y: $(window).height()};
+
+		if (delta.dir === 'next') {
+
+			var page = pages.eq(currentIndex);
+
+			var scaleValue = 1 - Math.abs(delta.wx);
+			// var translateValue = -50*(1-scaleValue);
+			if (currentIndex === pages.length - 1 && scaleValue < .7) {
+				scaleValue = .7;
+			};
+			page.removeClass('turned')
+			page.css('transform', 'scaleX('+ scaleValue +')');
+			self.drawGradient(page, 1 - scaleValue);
+
+		} else
+		if (delta.dir === 'prev' && currentIndex > 0) {
+
+			var page = pages.eq(currentIndex - 1);
+			var scaleValue = Math.abs(delta.wx);
+
+			page.removeClass('turned')
+			page.css('transform', 'scaleX('+ scaleValue +')');
+			self.drawGradient(page, 1 - scaleValue);
+
+		};
+
+		return self;
+	},
+
+	doubleModeDraw : function(pages, currentIndex, delta){
+		var self = this;
+		var windowSize = {x: $(window).width(), y: $(window).height()};
+
+		if (delta.dir === 'next') {
+
+			var currentPage;
+			var nextPage
+			var scaleValue;
+
+			if (currentIndex % 2 === 0) {
+				currentPage = pages.eq(currentIndex);
+				nextPage = pages.eq(currentIndex + 1);
+			} else {
+				currentPage = pages.eq(currentIndex + 1);
+				nextPage = pages.eq(currentIndex + 2);
+			};
+
+			if (delta.wx > -.5) {
+				scaleValue = 1 - Math.abs(delta.wx * 2);
+				nextPage.css('transform', 'scaleX('+ 0 +')');
+				currentPage.css('transform', 'scaleX('+ scaleValue +')');
+				self.drawGradient(currentPage, 1 - scaleValue);
+
+			} else {
+				scaleValue = Math.abs(delta.wx * 2) - 1;
+				currentPage.css('transform', 'scaleX('+ 0 +')');
+				nextPage.css('transform', 'scaleX('+ scaleValue +')');
+				self.drawGradient(nextPage, 1 - scaleValue);
+			};
+
+			if (currentIndex === 0) {
+				var containerTranslateValue = -25 + 25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+			} else
+			if ( Magazine.pagesCount % 2 === 0 
+				 && currentIndex === Magazine.pagesCount - 2
+				 || currentIndex === Magazine.pagesCount - 3) {
+
+				var containerTranslateValue =  25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+
+			};
+
+		} else
+		if (delta.dir === 'prev' && currentIndex > 0) {
+
+			var currentPage;
+			var nextPage;
+
+			if (currentIndex % 2 === 0) {
+				currentPage = pages.eq(currentIndex - 1);
+				nextPage = pages.eq(currentIndex - 2);
+			} else {
+				currentPage = pages.eq(currentIndex);
+				nextPage = pages.eq(currentIndex - 1);
+			};
+
+			var scaleValue;
+
+			if (delta.wx < .5) {
+				scaleValue = 1 - Math.abs(delta.wx * 2);
+				nextPage.css('transform', 'scaleX('+ 0 +')');
+				currentPage.css('transform', 'scaleX('+ scaleValue +')');
+			} else {
+				scaleValue = Math.abs(delta.wx * 2) - 1;
+				currentPage.css('transform', 'scaleX('+ 0 +')');
+				nextPage.css('transform', 'scaleX('+ scaleValue +')');
+			}
+
+			if (currentIndex === 1 || currentIndex === 2) {
+				var containerTranslateValue = -25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+			} else
+			if (currentIndex === Magazine.pagesCount - 1) {
+				var containerTranslateValue = 25 - 25 * Math.abs(delta.wx) + '%';
+				Magazine.container.css('transform', 'translateX('+ containerTranslateValue +')')
+			};
+
+		};
+
+		return self;
+
+	},
+
+	drawSheetPosition: null,
+
+
+	drawGradient: function(pageElement, opacity){
+
+		var self = this;
+		var gradientElement = pageElement.find('.gradient-element');
+		pageElement.addClass('visible-gradient');
+		gradientElement.css('opacity', opacity);
+
+	},
+
+	clearGradient: function(pages){
+
+		pages.removeClass('visible-gradient');
+
+	},
+
+/*
+	метод перехода к определенной странице
+*/
+	goTo: function(page){
+//page - page index from
+		var self = this;
+		var pages = Magazine.pages;
+
+		if (page > pages.length - 1) {
+			page = pages.length - 1;
+		} else if (page < 0){
+			page = 0;
+		};
+
+		if (page !== undefined) {
+			Magazine.currentPage = page;
+		} else {
+			page = Magazine.currentPage;
+		};
+
+// пробегаем по страницам и в зависимости от viewMode 
+// добавляем классы turned (для перевернутых страниц)
+		if (self.viewMode === 'single' || (self.viewMode === 'double' && page % 2 === 0)) {
+			pages.eq(page).prevAll().addClass('turned');
+			pages.eq(page).nextAll().removeClass('turned');
+			pages.eq(page).removeClass('turned');
+		} else
+		if (self.viewMode === 'double' && page % 2 !== 0) {
+			pages.eq(page).prevAll().addClass('turned');
+			pages.eq(page).addClass('turned');
+			pages.eq(page).nextAll().removeClass('turned');
+		};
+		if (self.viewMode === 'double') {
+			if (page === 0) {
+					Magazine.container.css('transform', 'translateX(-25%)')
+			} else
+			if (page === Magazine.pagesCount - 1) {
+				Magazine.container.css('transform', 'translateX(25%)')
+			};
+		} else {
+			Magazine.container.css('transform', '')
+		};
+
+		self.hideUnnecessaryPages();
+	},
+
+	hideUnnecessaryPages: function(){
+		var self = this;
+		var pages = Magazine.pages;
+		var page = Magazine.currentPage;
+
+		pages.removeClass('hidden');
+
+		if (self.viewMode === 'single') {
+
+			pages.eq(page - 1 < 0 ? 0 : page - 1).prevAll().addClass('hidden');
+			pages.eq(page + 1).nextAll().addClass('hidden');
+
+		} else if (self.viewMode === 'double') {
+
+				pages.eq(page - 3 < 0 ? 0 : page - 3).prevAll().addClass('hidden');
+				pages.eq(page + 3).nextAll().addClass('hidden');
+
+		};
+
+
+	},
+
+	checkViewMode: function(){
+		var self = this;
+
+		if ( $(window).width()/$(window).height() >= 750/667) {
+			if (self.viewMode !== 'double') {
+				self.viewMode = 'double';
+				self.drawSheetPosition = self.doubleModeDraw;
+				self.goTo(Magazine.currentPage);
+			};
+		} else {
+			if (self.viewMode !== 'single') {
+				self.viewMode = 'single';
+				self.drawSheetPosition = self.singleModeDraw;
+				self.goTo(Magazine.currentPage);
+			};
+		};
+
+		return self;
+	},
+
+	zIndexRules: function(pageSelector){
+		var self = this;
+		var pagesCount = Magazine.pagesCount;
+		var styleElement = $('<style type="text/css">');
+		var styleRule = '';
+
+		for (var i = 1; i <= pagesCount; i++) {
+
+			styleRule += pageSelector + ':nth-child('+ i +')' + '{z-index: ' + (pagesCount + 10 - i) + ';}\r\n';
+
+		};
+
+		styleElement.text(styleRule);
+		$('head').append(styleElement);
+
+		return self;
+	},
+};
+
+
+// ====================================================================================
+/* controller */
+var Controller = {
+
+	mouseUp: function(delta){
+
+		View.animatePage(Magazine.pages, Magazine.currentPage, delta);
+
+	},
+
+	hashChanged: function(){
+
+			Magazine.checkHash();
+			View.hideUnnecessaryPages();
+	},
+
+	resize: function(){
+		View.checkViewMode();
+	},
+
+	handleMove: function(delta){
+
+
+			View.drawSheetPosition(Magazine.pages, Magazine.currentPage, delta);
+
+
+	},
+
+	playVideo: function(){
+
+		var video = $(this).siblings('video');
+		video.addClass('active');
+		video.get(0).play();
+
+		$(this).addClass('hidden');
+	}
+
+};
+
+
+
+//==========================================================================================
+/* main */
+
+var magazineSelector = '#magazine';
+var pageSelector = '.magazine-page';
+var gradientElementSelector = '.gradient-element';
+var fullPageAnimationDuration = 100;
+var handleHashChange = false;
+
+//  init function 
+
+(function(){
+
+	var app = {
+
+		init: function(){
+
+			this.event();
+			this.main();
+
+		},
+
+		main: function(){
+
+			Magazine.init(magazineSelector, pageSelector);
+
+		},
+
+		event: function(){
+
+			var mouseDown = function(evt) {
+
+				if (evt.type === 'touchstart') {
+					evt.originalEvent.changedTouches[0].preventDefault = evt.preventDefault;
+					evt.originalEvent.changedTouches[0].stopPropagation = evt.stopPropagation;
+					evt = evt.originalEvent.changedTouches[0];
+				};
+
+				var windowSize = {x: $(window).width(), y: $(window).height()};
+				var firstClick = {x: evt.pageX, y: evt.pageY};
+				var moved = false;
+
+					evt.preventDefault();
+					evt.stopPropagation();
+					var movedIn = {}, delta = {};
+
+					$(document).on('mousemove touchmove', function(evt){
+
+						animationFrame(function(){
+							if (evt.type === 'touchmove') {
+								evt.originalEvent.changedTouches[0].preventDefault = evt.preventDefault;
+								evt.originalEvent.changedTouches[0].stopPropagation = evt.stopPropagation;
+								evt = evt.originalEvent.changedTouches[0];
+							};
+
+							movedIn.x = evt.pageX;
+							movedIn.y = evt.pageY;
+
+							delta.x = movedIn.x - firstClick.x;
+							delta.y = movedIn.y - firstClick.y;
+							delta.wx = (movedIn.x - firstClick.x)/windowSize.x;
+							delta.wy = (movedIn.y - firstClick.y)/windowSize.y;
+
+							if (Math.abs(delta.x) > 5) {
+								evt.preventDefault();
+								evt.stopPropagation();
+
+								if (!moved){
+									delta.dir = delta.x < 0 ? 'next' : 'prev';
+									moved = true;
+								};
+								if ( (delta.x < 0 && delta.dir === 'next') || (delta.x > 0 && delta.dir === 'prev') ) {
+									Controller.handleMove(delta);
+								};
+							};
+						});
+
+					}.debounce(1000/60));
+
+					$(document).on('mouseup touchend', function(){
+						// любо все вернуть на место, либо промотать страничку
+						if (moved) {
+							Controller.mouseUp(delta);
+						};
+
+						$(this).off('mousemove');
+						$(this).off('mouseup');
+						$(this).off('touchmove');
+						$(this).off('touchend');
+					});
+
+			};
+
+			$(window).on('mousedown touchstart', mouseDown);
+			$(document).on('click', '.play-button', Controller.playVideo);
+			$(window).on('resize', Controller.resize);
+			$(window).on('hashchange', Controller.hashChanged);
+
+			$('video').on('click', function(){
+				var playButton = $(this).siblings('.play-button');
+				if (this.paused) {
+					this.play();
+					// playButton.addClass('hidden');
+				} else {
+					this.pause();
+					// playButton.removeClass('hidden');
+				}
+
+			});
+
+			$(document).on('pageflip', function(){
+				$('video.active').each(function(){
+					this.pause();
+				});
+			});
+		},
+
+	};
+
+	app.init();
+
+}());
+</script>
