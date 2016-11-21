@@ -46,32 +46,34 @@ var handleHashChange = false;
 
 					$(document).on('mousemove touchmove', function(evt){
 
-						if (evt.type === 'touchmove') {
-							evt.originalEvent.changedTouches[0].preventDefault = evt.preventDefault;
-							evt.originalEvent.changedTouches[0].stopPropagation = evt.stopPropagation;
-							evt = evt.originalEvent.changedTouches[0];
-						};
-
-						movedIn.x = evt.pageX;
-						movedIn.y = evt.pageY;
-
-						delta.x = movedIn.x - firstClick.x;
-						delta.y = movedIn.y - firstClick.y;
-						delta.wx = (movedIn.x - firstClick.x)/windowSize.x;
-						delta.wy = (movedIn.y - firstClick.y)/windowSize.y;
-
-						if (Math.abs(delta.x) > 5) {
-							evt.preventDefault();
-							evt.stopPropagation();
-
-							if (!moved){
-								delta.dir = delta.x < 0 ? 'next' : 'prev';
-								moved = true;
+						animationFrame(function(){
+							if (evt.type === 'touchmove') {
+								evt.originalEvent.changedTouches[0].preventDefault = evt.preventDefault;
+								evt.originalEvent.changedTouches[0].stopPropagation = evt.stopPropagation;
+								evt = evt.originalEvent.changedTouches[0];
 							};
-							if ( (delta.x < 0 && delta.dir === 'next') || (delta.x > 0 && delta.dir === 'prev') ) {
-								Controller.handleMove(delta);
+
+							movedIn.x = evt.pageX;
+							movedIn.y = evt.pageY;
+
+							delta.x = movedIn.x - firstClick.x;
+							delta.y = movedIn.y - firstClick.y;
+							delta.wx = (movedIn.x - firstClick.x)/windowSize.x;
+							delta.wy = (movedIn.y - firstClick.y)/windowSize.y;
+
+							if (Math.abs(delta.x) > 5) {
+								evt.preventDefault();
+								evt.stopPropagation();
+
+								if (!moved){
+									delta.dir = delta.x < 0 ? 'next' : 'prev';
+									moved = true;
+								};
+								if ( (delta.x < 0 && delta.dir === 'next') || (delta.x > 0 && delta.dir === 'prev') ) {
+									Controller.handleMove(delta);
+								};
 							};
-						};
+						});
 
 					}.debounce(1000/60));
 

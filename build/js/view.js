@@ -174,7 +174,7 @@ var View = {
 			} else {
 				delta.wx = targetDelta;
 				self.drawSheetPosition(pages, currentIndex, delta)
-						.endAnimation(pages, currentIndex, delta, !flag);
+					.endAnimation(pages, currentIndex, delta, !flag);
 			};
 		};
 
@@ -196,7 +196,7 @@ var View = {
 			if (currentIndex === pages.length - 1 && scaleValue < .7) {
 				scaleValue = .7;
 			};
-
+			page.removeClass('turned')
 			page.css('transform', 'scaleX('+ scaleValue +')');
 			self.drawGradient(page, 1 - scaleValue);
 
@@ -206,6 +206,7 @@ var View = {
 			var page = pages.eq(currentIndex - 1);
 			var scaleValue = Math.abs(delta.wx);
 
+			page.removeClass('turned')
 			page.css('transform', 'scaleX('+ scaleValue +')');
 			self.drawGradient(page, 1 - scaleValue);
 
@@ -358,9 +359,32 @@ var View = {
 			};
 		} else {
 			Magazine.container.css('transform', '')
-		}
+		};
+
+		self.hideUnnecessaryPages();
 	},
 
+	hideUnnecessaryPages: function(){
+		var self = this;
+		var pages = Magazine.pages;
+		var page = Magazine.currentPage;
+
+		pages.removeClass('hidden');
+
+		if (self.viewMode === 'single') {
+
+			pages.eq(page - 1 < 0 ? 0 : page - 1).prevAll().addClass('hidden');
+			pages.eq(page + 1).nextAll().addClass('hidden');
+
+		} else if (self.viewMode === 'double') {
+
+				pages.eq(page - 3 < 0 ? 0 : page - 3).prevAll().addClass('hidden');
+				pages.eq(page + 3).nextAll().addClass('hidden');
+
+		};
+
+
+	},
 
 	checkViewMode: function(){
 		var self = this;

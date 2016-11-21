@@ -41,6 +41,7 @@ body, html {
 
 		&.turned {
 			transform: scaleX(0);
+			// display:none;
 		}
 
 		&.visible-gradient {

@@ -9,7 +9,7 @@ var Controller = {
 	hashChanged: function(){
 
 			Magazine.checkHash();
-
+			View.hideUnnecessaryPages();
 	},
 
 	resize: function(){
@@ -18,9 +18,9 @@ var Controller = {
 
 	handleMove: function(delta){
 
-		animationFrame(function(){
+
 			View.drawSheetPosition(Magazine.pages, Magazine.currentPage, delta);
-		});
+
 
 	},
 
